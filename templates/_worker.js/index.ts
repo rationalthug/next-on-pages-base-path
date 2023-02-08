@@ -126,10 +126,10 @@ declare const __FUNCTIONS__: EdgeFunctions;
 
 declare const __MIDDLEWARE__: EdgeFunctions;
 
+declare const __BASE_PATH__: string;
+
 export default {
   async fetch(request, env, context) {
-    globalThis.process.env = { ...globalThis.process.env, ...env };
-
     const { pathname } = new URL(request.url);
     const routes = routesMatcher({ request }, __CONFIG__.routes);
 
@@ -147,9 +147,15 @@ export default {
       for (const matcher of matchers) {
         if (matcher.regexp) {
           const regexp = new RegExp(matcher?.regexp);
+          let nextPathname = __BASE_PATH__
+            ? // remove basePath from URL, also smoosh `//` into `/`
+              pathname.replace(__BASE_PATH__, "/").replace("//", "/")
+            : pathname;
+
           if (
-            pathname.match(regexp) ||
-            `${pathname}/page`.replace("//page", "/page").match(regexp)
+            nextPathname.match(regexp) ||
+            `${nextPathname}/page`.replace("//page", "/page").match(regexp) ||
+            `${nextPathname}/page`.replace("//page", "/page").match(regexp)
           ) {
             found = true;
             break;
